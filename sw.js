@@ -1,5 +1,12 @@
-const CACHE = 'qixi-countdown-v1';
-const ASSETS = ['index.html', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'qixi-countdown-v2';
+const BASE = '/qixi-countdown/';
+const ASSETS = [
+  BASE + 'index.html',
+  BASE + 'manifest.json',
+  BASE + 'icon.svg',
+  BASE + 'icon-192.png',
+  BASE + 'icon-512.png'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(
