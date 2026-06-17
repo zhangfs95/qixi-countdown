@@ -2,20 +2,15 @@
   "name": "七喜 · 倒计时",
   "short_name": "七喜倒计时",
   "description": "简约倒计时器",
-  "start_url": "/qixi-countdown/index.html",
+  "start_url": "/qixi-countdown/",
   "scope": "/qixi-countdown/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#1e1e2e",
   "theme_color": "#1e1e2e",
   "lang": "zh-CN",
+  "id": "/qixi-countdown/",
   "icons": [
-    {
-      "src": "/qixi-countdown/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
     {
       "src": "/qixi-countdown/icon-192.png",
       "sizes": "192x192",
@@ -26,6 +21,12 @@
       "src": "/qixi-countdown/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/qixi-countdown/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

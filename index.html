@@ -82,6 +82,15 @@
   .status { margin-top: 18px; font-size: 14px; color: var(--sub); }
   .status.done { color: var(--red); font-weight: 600; }
   .hint { margin-top: 28px; font-size: 12px; color: #45475a; }
+  .install-btn {
+    display: none; margin-top: 16px;
+    background: var(--accent); color: #1e1e2e;
+    font-size: 15px; font-weight: 600;
+    padding: 10px 28px; border: none; border-radius: 14px;
+    cursor: pointer; transition: background 0.2s, transform 0.1s;
+  }
+  .install-btn:active { transform: scale(0.96); }
+  .install-btn.show { display: inline-block; }
 </style>
 </head>
 <body>
@@ -112,6 +121,7 @@
   </div>
 
   <div class="status" id="status">设置时间后点击开始</div>
+  <button class="install-btn" id="installBtn" onclick="installApp()">📲 安装应用</button>
   <div class="hint">空格 开始/暂停 · R 重置</div>
 </div>
 
@@ -246,6 +256,35 @@
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('⏰ 时间到', { body: '倒计时结束！', icon: 'icon.svg', vibrate: [200, 100, 200] });
     }
+  }
+
+
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.classList.add('show');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    installBtn.classList.remove('show');
+    status.textContent = '安装成功！';
+    status.classList.add('done');
+    setTimeout(() => { status.textContent = '设置时间后点击开始'; status.classList.remove('done'); }, 3000);
+  });
+
+  function installApp() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((r) => {
+      if (r.outcome === 'accepted') {
+        installBtn.classList.remove('show');
+      }
+      deferredPrompt = null;
+    });
   }
 
   document.addEventListener('keydown', e => {
