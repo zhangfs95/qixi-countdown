@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1e1e2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="七喜倒计时">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<title>七喜 · 倒计时</title>
+<style>
+  :root {
+    --bg: #1e1e2e; --fg: #cdd6f4; --surface: #313244;
+    --accent: #89b4fa; --green: #a6e3a1; --yellow: #f9e2af;
+    --red: #f38ba8; --sub: #6c7086;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", "Roboto", sans-serif;
+    background: var(--bg); color: var(--fg);
+    display: flex; justify-content: center; align-items: center;
+    user-select: none; -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .card {
+    text-align: center; width: min(480px, 90vw);
+    padding: 24px 0;
+  }
+  h1 { font-size: clamp(26px, 6vw, 34px); color: var(--accent); margin-bottom: 4px; }
+  .clock { font-size: clamp(13px, 3vw, 16px); color: var(--sub); margin-bottom: 16px; letter-spacing: 1px; }
+  .clock span { color: var(--fg); font-weight: 600; }
+  .ring-container {
+    position: relative; width: min(280px, 70vw); height: min(280px, 70vw);
+    margin: 0 auto 16px;
+  }
+  .ring-container svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface); stroke-width: 10; }
+  .ring-fg { fill: none; stroke: var(--accent); stroke-width: 10;
+    stroke-linecap: round; transition: stroke-dashoffset 0.15s linear; }
+  .time-text {
+    position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center;
+    font-size: clamp(36px, 9vw, 48px); font-weight: 700; letter-spacing: 3px;
+  }
+  .bar-bg {
+    height: 8px; background: var(--surface); border-radius: 4px;
+    margin: 0 30px 24px; overflow: hidden;
+  }
+  .bar-fg {
+    height: 100%; background: var(--accent); border-radius: 4px;
+    width: 0%; transition: width 0.15s linear;
+  }
+  .inputs {
+    display: flex; justify-content: center; gap: clamp(10px, 3vw, 16px);
+    margin-bottom: 24px;
+  }
+  .input-group { display: flex; flex-direction: column; align-items: center; }
+  .input-group label { font-size: 13px; color: var(--sub); margin-bottom: 6px; }
+  .input-group input {
+    width: clamp(56px, 15vw, 72px); padding: 10px 6px; text-align: center;
+    font-size: clamp(18px, 5vw, 24px); font-weight: 700;
+    background: var(--surface); color: var(--fg);
+    border: 2px solid transparent; border-radius: 12px;
+    outline: none; transition: border-color 0.2s;
+    caret-color: var(--accent);
+  }
+  .input-group input:focus { border-color: var(--accent); }
+  .buttons { display: flex; justify-content: center; gap: clamp(10px, 3vw, 16px); }
+  button {
+    font-size: clamp(15px, 3.5vw, 17px); font-weight: 600;
+    padding: 12px clamp(24px, 7vw, 36px);
+    border: none; border-radius: 14px; cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active { transform: scale(0.96); }
+  #btnStart { background: var(--green); color: #1e1e2e; }
+  #btnReset { background: var(--surface); color: var(--fg); }
+  .status { margin-top: 18px; font-size: 14px; color: var(--sub); }
+  .status.done { color: var(--red); font-weight: 600; }
+  .hint { margin-top: 28px; font-size: 12px; color: #45475a; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🍻 七喜 · 倒计时</h1>
+  <div class="clock">现在时间 <span id="nowTime">--:--:--</span></div>
+
+  <div class="ring-container">
+    <svg viewBox="0 0 280 280">
+      <circle class="ring-bg" cx="140" cy="140" r="128"/>
+      <circle class="ring-fg" cx="140" cy="140" r="128"
+        stroke-dasharray="804.25" stroke-dashoffset="0"/>
+    </svg>
+    <div class="time-text" id="timeText">00:00</div>
+  </div>
+
+  <div class="bar-bg"><div class="bar-fg" id="barFg"></div></div>
+
+  <div class="inputs">
+    <div class="input-group"><label>时</label><input id="inpH" type="number" min="0" max="23" value="0" inputmode="numeric"></div>
+    <div class="input-group"><label>分</label><input id="inpM" type="number" min="0" max="59" value="1" inputmode="numeric"></div>
+    <div class="input-group"><label>秒</label><input id="inpS" type="number" min="0" max="59" value="0" inputmode="numeric"></div>
+  </div>
+
+  <div class="buttons">
+    <button id="btnStart" onclick="toggle()">▶ 开始</button>
+    <button id="btnReset" onclick="reset()">↺ 重置</button>
+  </div>
+
+  <div class="status" id="status">设置时间后点击开始</div>
+  <div class="hint">空格 开始/暂停 · R 重置</div>
+</div>
+
+<script>
+  const CIRC = 804.25;
+  let total = 0, remain = 0;
+  let timer = null, running = false, paused = false;
+  let wakeLock = null;
+
+  const ring = document.querySelector('.ring-fg');
+  const bar = document.getElementById('barFg');
+  const timeText = document.getElementById('timeText');
+  const nowEl = document.getElementById('nowTime');
+  const btn = document.getElementById('btnStart');
+  const status = document.getElementById('status');
+
+  // ── 注册 Service Worker ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+
+  // ── 请求通知权限 ──
+  if ('Notification' in window && Notification.permission === 'default') {
+    document.addEventListener('click', () => Notification.requestPermission(), { once: true });
+  }
+
+  // ── 实时时钟 ──
+  function updateClock() {
+    nowEl.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  function fmt(t) {
+    let m = Math.floor(t / 60), s = Math.floor(t % 60);
+    let h = Math.floor(m / 60); m %= 60;
+    return h > 0
+      ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+      : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function updateUI() {
+    timeText.textContent = fmt(remain);
+    let ratio = total > 0 ? remain / total : 1;
+    ring.style.strokeDashoffset = CIRC * (1 - ratio);
+    bar.style.width = ((1 - ratio) * 100) + '%';
+  }
+
+  async function acquireWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    } catch (_) {}
+  }
+
+  async function releaseWakeLock() {
+    if (wakeLock) {
+      try { await wakeLock.release(); } catch (_) {}
+      wakeLock = null;
+    }
+  }
+
+  function tick() {
+    if (!running || paused) return;
+    if (remain <= 0) { finish(); return; }
+    remain = Math.max(0, remain - 0.1);
+    updateUI();
+    timer = setTimeout(tick, 100);
+  }
+
+  function start() {
+    let h = parseInt(document.getElementById('inpH').value) || 0;
+    let m = parseInt(document.getElementById('inpM').value) || 0;
+    let s = parseInt(document.getElementById('inpS').value) || 0;
+    total = h * 3600 + m * 60 + s;
+    if (total <= 0) { status.textContent = '请设置大于 0 的时间'; return; }
+    remain = total;
+    running = true; paused = false;
+    btn.textContent = '⏸ 暂停';
+    btn.style.background = '#f9e2af';
+    status.textContent = '计时中…';
+    status.classList.remove('done');
+    acquireWakeLock();
+    updateUI();
+    timer = setTimeout(tick, 100);
+  }
+
+  function pause() {
+    paused = true;
+    btn.textContent = '▶ 继续';
+    btn.style.background = '#a6e3a1';
+    status.textContent = '已暂停';
+    clearTimeout(timer);
+    releaseWakeLock();
+  }
+
+  function resume() {
+    paused = false;
+    btn.textContent = '⏸ 暂停';
+    btn.style.background = '#f9e2af';
+    status.textContent = '计时中…';
+    acquireWakeLock();
+    timer = setTimeout(tick, 100);
+  }
+
+  function toggle() {
+    if (!running) start();
+    else if (paused) resume();
+    else pause();
+  }
+
+  function reset() {
+    running = false; paused = false; remain = 0; total = 0;
+    clearTimeout(timer); releaseWakeLock();
+    btn.textContent = '▶ 开始'; btn.style.background = '#a6e3a1';
+    status.textContent = '设置时间后点击开始';
+    status.classList.remove('done');
+    ring.style.strokeDashoffset = 0;
+    bar.style.width = '0%'; timeText.textContent = '00:00';
+  }
+
+  function finish() {
+    running = false;
+    clearTimeout(timer); releaseWakeLock();
+    ring.style.strokeDashoffset = CIRC; bar.style.width = '100%';
+    timeText.textContent = '00:00';
+    btn.textContent = '▶ 开始'; btn.style.background = '#a6e3a1';
+    status.textContent = '⏰ 时间到！'; status.classList.add('done');
+
+    // Web 通知
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('⏰ 时间到', { body: '倒计时结束！', icon: 'icon.svg', vibrate: [200, 100, 200] });
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    if (e.code === 'KeyR' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); reset(); }
+  });
+</script>
+</body>
+</html>
